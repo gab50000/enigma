@@ -14,7 +14,7 @@ newtype Offset = Offset Int
 
 data WheelState = WheelState Wheel Offset
 
-data Enigma = Enigma WheelState WheelState WheelState Umkehrwalze
+data Enigma = Enigma WheelState WheelState WheelState Umkehrwalze Steckerbrett
 
 w1 = Wheel "EKMFLGDQVZNTOWYHXUSPAIBRCJ" (Notch 'Y') (Turnover 'Q')
 w2 = Wheel "AJDKSIRUXBLHWTMCQGZNPYFVOE" (Notch 'M') (Turnover 'E')
