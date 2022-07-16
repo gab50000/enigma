@@ -1,33 +1,33 @@
 module Main where
 
-newtype Notch = Notch Char
+import Control.Monad (guard)
+import Data.Char (ord)
+import Wheel
 
-newtype Turnover = Turnover Char
-
-data Wheel = Wheel [Char] Notch Turnover
-
-newtype Umkehrwalze = Umkehrwalze [Char]
-
-data Steckerbrett = Steckerbrett
-
-newtype Offset = Offset Int
-
-data WheelState = WheelState Wheel Offset
+newtype Steckerbrett = Steckerbrett [(Char, Char)]
 
 data Enigma = Enigma WheelState WheelState WheelState Umkehrwalze Steckerbrett
 
-w1 = Wheel "EKMFLGDQVZNTOWYHXUSPAIBRCJ" (Notch 'Y') (Turnover 'Q')
-w2 = Wheel "AJDKSIRUXBLHWTMCQGZNPYFVOE" (Notch 'M') (Turnover 'E')
-w3 = Wheel "BDFHJLCPRTXVZNYEIWGAKMUSQO" (Notch 'D') (Turnover 'V')
-w4 = Wheel "ESOVPZJAYQUIRHXLNFTGKDCMWB" (Notch 'R') (Turnover 'J')
-w5 = Wheel "VZBRGITYUPSDNHLXAWMJQOFECK" (Notch 'H') (Turnover 'Z')
+argsort :: [Char] -> [Int]
+argsort = go []
+  where
+    go :: [Int] -> [Char] -> [Int]
+    go indices [] = reverse indices
+    go indices (x : xs) = go ((ord x - ord 'A') : indices) xs
 
-ukwa = Umkehrwalze "EJMZALYXVBWFCRQUONTSPIKHGD"
-ukwb = Umkehrwalze "YRUHQSLDPXNGOKMIEBFZCWVJAT"
-ukwc = Umkehrwalze "FVPJIAOYEDRZXWGCTKUQSBNMHL"
+-- revert :: WheelState -> WheelState
+-- revert (WheelState (Wheel translation _ _) offset) = undefined
 
-step :: Wheel -> Char -> Char
-step = undefined
+instance Encryptor Enigma where
+    forward (Enigma wst1 wst2 wst3 ukw _) c0 = do
+        c1 <- forward wst1 c0
+        c2 <- forward wst2 c1
+        c3 <- forward wst3 c2
+        c4 <- forward ukw c3
+        return c3
+
+step :: Enigma -> Char -> (Enigma, Char)
+step enigma char = undefined
 
 main :: IO ()
-main = putStrLn "Engima"
+main = print (makeWheel (['B' .. 'Z'] ++ "A") (Notch 'X') (Turnover 'X'))
