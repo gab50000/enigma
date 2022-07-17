@@ -1,6 +1,8 @@
 module Wheel (
-    Notch (..),
-    Turnover (..),
+    Notch,
+    Turnover,
+    charToNotch,
+    charToTurnover,
     Offset (..),
     Wheel,
     makeWheel,
@@ -13,23 +15,33 @@ module Wheel (
     w3,
     w4,
     w5,
+    ukwa,
+    rotate,
+    isAtTurnover,
 ) where
 
+import Control.Monad (guard)
 import Data.Char (chr, ord)
 import Data.List (elemIndex, sort)
 import Debug.Trace (trace)
 
-newtype Notch = Notch Char deriving (Show)
+newtype Notch = Notch Int deriving (Show)
 
-newtype Turnover = Turnover Char deriving (Show)
+charToNotch :: Char -> Notch
+charToNotch char = Notch (ord char - ord 'A')
+
+newtype Turnover = Turnover Int deriving (Show)
+
+charToTurnover :: Char -> Turnover
+charToTurnover char = Turnover (ord char - ord 'A')
 
 data Wheel = Wheel RelTranslation Notch Turnover deriving (Show)
 
-newtype Umkehrwalze = Umkehrwalze RelTranslation
+newtype Umkehrwalze = Umkehrwalze RelTranslation deriving (Show)
 
-newtype Offset = Offset Int
+newtype Offset = Offset Int deriving (Show)
 
-data WheelState = WheelState Wheel Offset
+data WheelState = WheelState Wheel Offset deriving (Show)
 
 newtype RelTranslation = RelTranslation [Int] deriving (Show)
 
@@ -46,14 +58,17 @@ makeWheel lst = Wheel (diff lst)
 makeWheelState :: String -> Notch -> Turnover -> Offset -> WheelState
 makeWheelState lst notch turnover = WheelState (makeWheel lst notch turnover)
 
+isAtTurnover :: WheelState -> Bool
+isAtTurnover (WheelState (Wheel _ _ (Turnover turnover)) (Offset offset)) = turnover == offset
+
 makeUmkehrwalze :: [Char] -> Umkehrwalze
 makeUmkehrwalze lst = Umkehrwalze (diff lst)
 
-w1 = makeWheel "EKMFLGDQVZNTOWYHXUSPAIBRCJ" (Notch 'Y') (Turnover 'Q')
-w2 = makeWheel "AJDKSIRUXBLHWTMCQGZNPYFVOE" (Notch 'M') (Turnover 'E')
-w3 = makeWheel "BDFHJLCPRTXVZNYEIWGAKMUSQO" (Notch 'D') (Turnover 'V')
-w4 = makeWheel "ESOVPZJAYQUIRHXLNFTGKDCMWB" (Notch 'R') (Turnover 'J')
-w5 = makeWheel "VZBRGITYUPSDNHLXAWMJQOFECK" (Notch 'H') (Turnover 'Z')
+w1 = makeWheel "EKMFLGDQVZNTOWYHXUSPAIBRCJ" (charToNotch 'Y') (charToTurnover 'Q')
+w2 = makeWheel "AJDKSIRUXBLHWTMCQGZNPYFVOE" (charToNotch 'M') (charToTurnover 'E')
+w3 = makeWheel "BDFHJLCPRTXVZNYEIWGAKMUSQO" (charToNotch 'D') (charToTurnover 'V')
+w4 = makeWheel "ESOVPZJAYQUIRHXLNFTGKDCMWB" (charToNotch 'R') (charToTurnover 'J')
+w5 = makeWheel "VZBRGITYUPSDNHLXAWMJQOFECK" (charToNotch 'H') (charToTurnover 'Z')
 
 ukwa = makeUmkehrwalze "EJMZALYXVBWFCRQUONTSPIKHGD"
 ukwb = makeUmkehrwalze "YRUHQSLDPXNGOKMIEBFZCWVJAT"
@@ -65,18 +80,23 @@ class Encryptor a where
 
 instance Encryptor WheelState where
     forward (WheelState (Wheel translation _ _) (Offset offset)) char = do
-        let rotatedTrans = rotate translation offset
+        let rotatedTrans = setOffset translation offset
         forward_ rotatedTrans char
     backward (WheelState (Wheel translation _ _) (Offset offset)) char = do
-        let rotatedTrans = rotate translation offset
+        let rotatedTrans = setOffset translation offset
         backward_ rotatedTrans char
 
 instance Encryptor Umkehrwalze where
     forward (Umkehrwalze translation) = forward_ translation
     backward (Umkehrwalze translation) = backward_ translation
 
-rotate :: RelTranslation -> Int -> RelTranslation
-rotate (RelTranslation lst) off = RelTranslation (drop off lst ++ take off lst)
+setOffset :: RelTranslation -> Int -> RelTranslation
+setOffset (RelTranslation lst) off =
+    let offset = mod off (length lst)
+     in RelTranslation (drop offset lst ++ take offset lst)
+
+rotate :: WheelState -> WheelState
+rotate (WheelState whl (Offset offset)) = WheelState whl (Offset (offset + 1))
 
 forward_ :: RelTranslation -> Char -> Maybe Char
 forward_ (RelTranslation translation) char = do

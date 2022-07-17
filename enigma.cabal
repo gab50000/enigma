@@ -25,7 +25,9 @@ executable enigma
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    -- other-modules: Wheel
+    other-modules: 
+       Wheel,
+       Enigma
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -38,7 +40,8 @@ test-suite enigma-tests
     hs-source-dirs: tests, src
     main-is: test-enigma.hs
     other-modules:
-        Wheel
+        Wheel,
+        Enigma
 
     build-depends: base,
         QuickCheck,

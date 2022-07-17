@@ -2,6 +2,7 @@ module Main where
 
 import Control.Monad (join)
 import Debug.Trace (trace)
+import Enigma (Steckerbrett (Steckerbrett), initEnigma)
 import Test.HUnit
 import Test.QuickCheck (
     Arbitrary (arbitrary),
@@ -18,8 +19,10 @@ newtype InputAlphabet = InputAlphabet Char deriving (Show)
 instance Arbitrary InputAlphabet where
     arbitrary = InputAlphabet <$> elements ['A' .. 'Z']
 
-simpleWheelState = makeWheelState "CAB" (Notch 'A') (Turnover 'A') (Offset 0)
+simpleWheelState = makeWheelState "CAB" (charToNotch 'A') (charToTurnover 'A') (Offset 0)
 whlState = WheelState w1 (Offset 0)
+
+enigma = initEnigma w1 (Offset 0) w2 (Offset 0) w3 (Offset 0) ukwa (Steckerbrett [])
 
 prop_test1 (InputAlphabet char) = (forward whlState char >>= backward whlState) == Just char
 
