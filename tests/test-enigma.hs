@@ -11,8 +11,9 @@ test1 :: IO ()
 test1 = do
     quickCheck prop_test
 
-test2 = TestCase (assertEqual "Test forward_: " (Just 'B') (forward_ [1] 'A'))
-test3 = TestCase (assertEqual "Test backward_: " (Just 'A') (backward_ [1] 'B'))
+test2 = TestCase (assertEqual "Test forward: " (Just 'B') (forward (makeWheelState "BA" (Notch 'A') (Turnover 'A') (Offset 0)) 'A'))
+
+test3 = TestCase (assertEqual "Test backward: " (Just 'X') (backward (makeWheelState "BA" (Notch 'A') (Turnover 'A') (Offset 0)) 'A'))
 
 tests = TestList [test2, test3]
 
