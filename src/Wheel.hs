@@ -4,36 +4,42 @@ module Wheel (
     Offset (..),
     Wheel,
     makeWheel,
+    makeWheelState,
     WheelState (..),
     Umkehrwalze (..),
-    Encryptor (forward),
-    forward_,
-    backward_,
-    revert,
+    Encryptor (forward, backward),
 ) where
 
 import Data.Char (chr, ord)
 import Data.List (elemIndex)
+import Debug.Trace (trace)
 
 newtype Notch = Notch Char deriving (Show)
 
 newtype Turnover = Turnover Char deriving (Show)
 
-data Wheel = Wheel [Int] Notch Turnover deriving (Show)
+data Wheel = Wheel RelTranslation Notch Turnover deriving (Show)
 
-newtype Umkehrwalze = Umkehrwalze [Int]
+newtype Umkehrwalze = Umkehrwalze RelTranslation
 
 newtype Offset = Offset Int
 
 data WheelState = WheelState Wheel Offset
 
-diff :: [Char] -> [Int]
+newtype RelTranslation = RelTranslation [Int] deriving (Show)
+
+newtype AbsTranslation = AbsTranslation [Int] deriving (Show)
+
+diff :: [Char] -> RelTranslation
 diff lst =
     let alphabet = ['A' .. 'Z']
-     in zipWith (\x y -> ord x - ord y) lst alphabet
+     in RelTranslation (zipWith (\x y -> ord x - ord y) lst alphabet)
 
 makeWheel :: [Char] -> Notch -> Turnover -> Wheel
 makeWheel lst = Wheel (diff lst)
+
+makeWheelState :: String -> Notch -> Turnover -> Offset -> WheelState
+makeWheelState lst notch turnover = WheelState (makeWheel lst notch turnover)
 
 makeUmkehrwalze :: [Char] -> Umkehrwalze
 makeUmkehrwalze lst = Umkehrwalze (diff lst)
@@ -63,23 +69,30 @@ instance Encryptor WheelState where
 instance Encryptor Umkehrwalze where
     forward (Umkehrwalze translation) = forward_ translation
 
-rotate :: [a] -> Int -> [a]
-rotate lst off = drop off lst ++ take off lst
+rotate :: RelTranslation -> Int -> RelTranslation
+rotate (RelTranslation lst) off = RelTranslation (drop off lst ++ take off lst)
 
-forward_ :: [Int] -> Char -> Maybe Char
-forward_ translation char = do
+forward_ :: RelTranslation -> Char -> Maybe Char
+forward_ (RelTranslation translation) char = do
     idx <- elemIndex char ['A' .. 'Z']
     let offset = translation !! idx
-    let charIdx = ord char
-    let newCharIdx = mod (charIdx + offset) (ord 'Z') + (ord 'A' - 1)
-    return (chr newCharIdx)
+    return (translateChar char offset)
 
-backward_ :: [Int] -> Char -> Maybe Char
+backward_ :: RelTranslation -> Char -> Maybe Char
 backward_ translation char = do
-    backTrans <- revert translation
+    let backTrans = revert translation
     forward_ backTrans char
 
-revert :: [Int] -> Maybe [Int]
-revert lst =
-    let indices = [0 .. length lst - 1]
-     in mapM (`elemIndex` lst) indices
+translateChar :: Char -> Int -> Char
+translateChar char offset =
+    let charIdx = ord char
+     in chr (translateIdx charIdx offset)
+
+translateIdx :: Int -> Int -> Int
+translateIdx charIdx offset = mod (charIdx + offset - ord 'A') 26 + ord 'A'
+
+revert :: RelTranslation -> RelTranslation
+revert (RelTranslation offsets) =
+    let indices = [0 ..]
+        absTranslation = zipWith translateIdx indices offsets
+     in RelTranslation $ zipWith (-) absTranslation indices
