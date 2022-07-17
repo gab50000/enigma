@@ -1,20 +1,36 @@
 module Main where
 
+import Control.Monad (join)
+import Debug.Trace (trace)
 import Test.HUnit
-import Test.QuickCheck
+import Test.QuickCheck (
+    Arbitrary (arbitrary),
+    Gen,
+    elements,
+    generate,
+    quickCheck,
+ )
+import Test.QuickCheck.Property (failed, reason, succeeded)
 import Wheel
 
-prop_test :: Int -> Property
-prop_test num = num > 0 ==> num + 1 > 0
+newtype InputAlphabet = InputAlphabet Char deriving (Show)
 
-test1 :: IO ()
-test1 = do
-    quickCheck prop_test
+instance Arbitrary InputAlphabet where
+    arbitrary = InputAlphabet <$> elements ['A' .. 'Z']
 
-test2 = TestCase (assertEqual "Test forward: " (Just 'B') (forward (makeWheelState "BA" (Notch 'A') (Turnover 'A') (Offset 0)) 'A'))
+simpleWheelState = makeWheelState "CAB" (Notch 'A') (Turnover 'A') (Offset 0)
+whlState = WheelState w1 (Offset 0)
 
-test3 = TestCase (assertEqual "Test backward: " (Just 'X') (backward (makeWheelState "BA" (Notch 'A') (Turnover 'A') (Offset 0)) 'A'))
+prop_test1 (InputAlphabet char) = (forward whlState char >>= backward whlState) == Just char
 
-tests = TestList [test2, test3]
+ptest1 = quickCheck prop_test1
 
-main = test1 >> runTestTT tests
+test2 = TestCase (assertEqual "Test forward: " (Just 'C') (forward simpleWheelState 'A'))
+test3 = TestCase (assertEqual "Test backward: " (Just 'C') (backward simpleWheelState 'B'))
+test4 = TestCase (assertEqual "Test backward: " (Just 'A') (backward simpleWheelState 'C'))
+
+tests = TestList [test2, test3, test4]
+
+main = do
+    ptest1
+    runTestTT tests
