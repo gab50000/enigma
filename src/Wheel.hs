@@ -8,10 +8,15 @@ module Wheel (
     WheelState (..),
     Umkehrwalze (..),
     Encryptor (forward, backward),
+    w1,
+    w2,
+    w3,
+    w4,
+    w5,
 ) where
 
 import Data.Char (chr, ord)
-import Data.List (elemIndex)
+import Data.List (elemIndex, sort)
 import Debug.Trace (trace)
 
 newtype Notch = Notch Char deriving (Show)
@@ -68,6 +73,7 @@ instance Encryptor WheelState where
 
 instance Encryptor Umkehrwalze where
     forward (Umkehrwalze translation) = forward_ translation
+    backward (Umkehrwalze translation) = backward_ translation
 
 rotate :: RelTranslation -> Int -> RelTranslation
 rotate (RelTranslation lst) off = RelTranslation (drop off lst ++ take off lst)
@@ -93,6 +99,8 @@ translateIdx charIdx offset = mod (charIdx + offset - ord 'A') 26 + ord 'A'
 
 revert :: RelTranslation -> RelTranslation
 revert (RelTranslation offsets) =
-    let indices = [0 ..]
+    let indices = map ord ['A' .. 'Z']
         absTranslation = zipWith translateIdx indices offsets
-     in RelTranslation $ zipWith (-) absTranslation indices
+        diff = trace ("absTrans: " ++ show absTranslation) zipWith (-) absTranslation indices
+        mapping = sort (zipWith (curry (\t -> (snd t, fst t))) indices absTranslation)
+     in RelTranslation $ map (\t -> snd t - fst t) mapping
