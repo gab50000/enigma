@@ -1,7 +1,7 @@
 module Enigma where
 
 import Control.Monad.State (State)
-import Control.Monad.State.Lazy (StateT, get, lift, put)
+import Control.Monad.State.Lazy (StateT, forM, get, lift, put, runStateT)
 import qualified Wheel as W
 
 newtype Steckerbrett = Steckerbrett [(Char, Char)] deriving (Show)
@@ -28,3 +28,8 @@ step c0 = do
 
 initEnigma :: W.Wheel -> W.Offset -> W.Wheel -> W.Offset -> W.Wheel -> W.Offset -> W.Umkehrwalze -> Steckerbrett -> Enigma
 initEnigma whl1 offset1 whl2 offset2 whl3 offset3 = Enigma (W.WheelState whl1 offset1) (W.WheelState whl2 offset2) (W.WheelState whl3 offset3)
+
+runEnigma :: Enigma -> [Char] -> Maybe [Char]
+runEnigma enigma input = do
+    (encoded, _) <- runStateT (forM input step) enigma
+    return encoded

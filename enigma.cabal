@@ -47,4 +47,5 @@ test-suite enigma-tests
 
     build-depends: base,
         QuickCheck,
-        HUnit
+        HUnit,
+        mtl
