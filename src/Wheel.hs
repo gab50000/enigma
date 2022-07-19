@@ -9,7 +9,8 @@ module Wheel (
     makeWheelState,
     WheelState (..),
     Umkehrwalze (..),
-    Encryptor (forward, backward),
+    Encryptor (forward),
+    Reversible (revert),
     w1,
     w2,
     w3,
@@ -78,17 +79,21 @@ class Encryptor a where
     forward :: a -> Char -> Maybe Char
     backward :: a -> Char -> Maybe Char
 
+class Reversible a where
+    revert :: a -> a
+
 instance Encryptor WheelState where
     forward (WheelState (Wheel translation _ _) (Offset offset)) char = do
         let rotatedTrans = setOffset translation offset
         forward_ rotatedTrans char
-    backward (WheelState (Wheel translation _ _) (Offset offset)) char = do
-        let rotatedTrans = setOffset translation offset
-        backward_ rotatedTrans char
+
+instance Reversible WheelState where
+    revert (WheelState (Wheel translation notch turnover) offset) =
+        let reverseTranslation = revert translation
+         in WheelState (Wheel reverseTranslation notch turnover) offset
 
 instance Encryptor Umkehrwalze where
     forward (Umkehrwalze translation) = forward_ translation
-    backward (Umkehrwalze translation) = backward_ translation
 
 setOffset :: RelTranslation -> Int -> RelTranslation
 setOffset (RelTranslation lst) off =
@@ -117,10 +122,9 @@ translateChar char offset =
 translateIdx :: Int -> Int -> Int
 translateIdx charIdx offset = mod (charIdx + offset - ord 'A') 26 + ord 'A'
 
-revert :: RelTranslation -> RelTranslation
-revert (RelTranslation offsets) =
-    let indices = map ord ['A' .. 'Z']
-        absTranslation = zipWith translateIdx indices offsets
-        diff = trace ("absTrans: " ++ show absTranslation) zipWith (-) absTranslation indices
-        mapping = sort (zipWith (curry (\t -> (snd t, fst t))) indices absTranslation)
-     in RelTranslation $ map (\t -> snd t - fst t) mapping
+instance Reversible RelTranslation where
+    revert (RelTranslation offsets) =
+        let indices = map ord ['A' .. 'Z']
+            absTranslation = zipWith translateIdx indices offsets
+            mapping = sort (zipWith (curry (\t -> (snd t, fst t))) indices absTranslation)
+         in RelTranslation $ map (\t -> snd t - fst t) mapping
