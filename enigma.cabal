@@ -27,13 +27,15 @@ executable enigma
     -- Modules included in this executable, other than Main.
     other-modules: 
        Wheel,
-       Enigma
+       Enigma,
+       SteckerBrett
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:    
         base ^>=4.14.3.0,
-        mtl
+        mtl,
+        unordered-containers
     hs-source-dirs:   app, src
     default-language: Haskell2010
 
@@ -43,7 +45,8 @@ test-suite enigma-tests
     main-is: test-enigma.hs
     other-modules:
         Wheel,
-        Enigma
+        Enigma,
+        SteckerBrett
 
     build-depends: base,
         QuickCheck,
