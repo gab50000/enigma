@@ -15,12 +15,12 @@ step c0 = do
     (Enigma wst1 wst2 wst3 ukw stkbr) <- get
     -- pass through Steckerbrett
     c1 <- lift $ SB.forward stkbr c0
-    -- pass through wheels
-    c2 <- lift $ W.forward wst1 c1 >>= W.forward wst2 >>= W.forward wst3
+    -- pass through wheels going from right to left
+    c2 <- lift $ W.forward wst3 c1 >>= W.forward wst2 >>= W.forward wst1
     -- pass through Umkehrwalze
     c4 <- lift $ W.forward ukw c2
     -- pass through wheels in reverse direction
-    c5 <- lift $ W.forward (W.revert wst3) c4 >>= W.forward (W.revert wst2) >>= W.forward (W.revert wst1)
+    c5 <- lift $ W.forward (W.revert wst1) c4 >>= W.forward (W.revert wst2) >>= W.forward (W.revert wst3)
     -- pass through Steckerbrett again
     c6 <- lift $ SB.forward stkbr c5
 
