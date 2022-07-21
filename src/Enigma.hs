@@ -3,8 +3,10 @@ module Enigma where
 import Control.Monad.State (State)
 import Control.Monad.State.Lazy (StateT, forM, get, lift, put, runStateT)
 
+import Debug.Trace (trace)
+import qualified GHC.Base as W
 import SteckerBrett as SB
-import Wheel (Umkehrwalze (Umkehrwalze))
+import Wheel (RingPos (..), Umkehrwalze (..), setRingPosition)
 import qualified Wheel as SB
 import qualified Wheel as W
 
@@ -28,13 +30,17 @@ step c0 = do
 
 updateState :: Enigma -> Enigma
 updateState (Enigma wst1 wst2 wst3 ukw stkbr) =
-    let wst3New = W.rotate wst3
-        wst2New = if W.isAtTurnover wst3 then W.rotate wst2 else wst2
-        wst1New = if W.isAtTurnover wst2 then W.rotate wst1 else wst1
+    let wst3New = trace "Rotate wheel 3" W.rotate wst3
+        wst2New = if W.isAtTurnover wst3 then trace "Rotate wheel 2" W.rotate wst2 else wst2
+        wst1New = if W.isAtTurnover wst2 then trace "Rotate wheel 1" W.rotate wst1 else wst1
      in Enigma wst1New wst2New wst3New ukw stkbr
 
-initEnigma :: W.Wheel -> W.Offset -> W.Wheel -> W.Offset -> W.Wheel -> W.Offset -> W.Umkehrwalze -> Steckerbrett -> Enigma
-initEnigma whl1 offset1 whl2 offset2 whl3 offset3 = Enigma (W.WheelState whl1 offset1) (W.WheelState whl2 offset2) (W.WheelState whl3 offset3)
+initEnigma :: W.Wheel -> W.RingPos -> W.Offset -> W.Wheel -> W.RingPos -> W.Offset -> W.Wheel -> W.RingPos -> W.Offset -> W.Umkehrwalze -> Steckerbrett -> Enigma
+initEnigma whl1 ringPos1 offset1 whl2 ringPos2 offset2 whl3 ringPos3 offset3 =
+    let whl1' = setRingPosition whl1 ringPos1
+        whl2' = setRingPosition whl2 ringPos2
+        whl3' = setRingPosition whl3 ringPos3
+     in Enigma (W.WheelState whl1' offset1) (W.WheelState whl2' offset2) (W.WheelState whl3' offset3)
 
 runEnigma :: Enigma -> [Char] -> Maybe [Char]
 runEnigma enigma input = do

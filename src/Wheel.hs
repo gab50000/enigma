@@ -17,8 +17,12 @@ module Wheel (
     w4,
     w5,
     ukwa,
+    ukwb,
+    ukwc,
     rotate,
     isAtTurnover,
+    RingPos (..),
+    setRingPosition,
 ) where
 
 import Control.Monad (guard)
@@ -32,6 +36,8 @@ charToNotch :: Char -> Notch
 charToNotch char = Notch (ord char - ord 'A')
 
 newtype Turnover = Turnover Int deriving (Show)
+
+newtype RingPos = RingPos Int deriving (Show)
 
 charToTurnover :: Char -> Turnover
 charToTurnover char = Turnover (ord char - ord 'A')
@@ -60,7 +66,7 @@ makeWheelState :: String -> Notch -> Turnover -> Offset -> WheelState
 makeWheelState lst notch turnover = WheelState (makeWheel lst notch turnover)
 
 isAtTurnover :: WheelState -> Bool
-isAtTurnover (WheelState (Wheel _ _ (Turnover turnover)) (Offset offset)) = turnover == offset
+isAtTurnover (WheelState (Wheel (RelTranslation relTrans) (Notch notch) (Turnover turnover)) (Offset offset)) = notch == mod offset (length relTrans)
 
 makeUmkehrwalze :: [Char] -> Umkehrwalze
 makeUmkehrwalze lst = Umkehrwalze (diff lst)
@@ -77,7 +83,6 @@ ukwc = makeUmkehrwalze "FVPJIAOYEDRZXWGCTKUQSBNMHL"
 
 class Encryptor a where
     forward :: a -> Char -> Maybe Char
-    backward :: a -> Char -> Maybe Char
 
 class Reversible a where
     revert :: a -> a
@@ -100,6 +105,11 @@ setOffset (RelTranslation lst) off =
     let offset = mod off (length lst)
      in RelTranslation (drop offset lst ++ take offset lst)
 
+setRingPosition :: Wheel -> RingPos -> Wheel
+setRingPosition (Wheel (RelTranslation relTrans) notch turnover) (RingPos ringPos) =
+    let newTrans = drop ringPos relTrans ++ take ringPos relTrans
+     in Wheel (RelTranslation newTrans) notch turnover
+
 rotate :: WheelState -> WheelState
 rotate (WheelState whl (Offset offset)) = WheelState whl (Offset (offset + 1))
 
@@ -107,7 +117,11 @@ forward_ :: RelTranslation -> Char -> Maybe Char
 forward_ (RelTranslation translation) char = do
     idx <- elemIndex char ['A' .. 'Z']
     let offset = translation !! idx
-    return (translateChar char offset)
+    let newChar = translateChar char offset
+
+    -- trace (char : " becomes " ++ [newChar]) return newChar
+
+    return newChar
 
 backward_ :: RelTranslation -> Char -> Maybe Char
 backward_ translation char = do
